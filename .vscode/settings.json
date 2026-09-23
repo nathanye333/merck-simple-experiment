@@ -1,0 +1,7 @@
+{
+  "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+  "python.condaPath": "/Users/nathanye/bin/micromamba",
+  "python.venvPath": "/Users/nathanye/micromamba/envs",
+  "python.terminal.activateEnvironment": true,
+  "notebook.kernelProviderAssociations": []
+}

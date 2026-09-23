@@ -1,0 +1,30 @@
+---
+description: Agent communication — transparent reasoning, molecule images, explainability
+alwaysApply: true
+---
+
+# Agent Interpretability
+
+Meeting reviewers will read agent output for sense-checking. Optimize for **transparent reasoning**, not clever black boxes.
+
+## Explain everything in plain language
+
+- State assumptions, data filters, split method, metrics, and why a molecule was proposed
+- If something is uncertain (docking reliability, domain shift), say so briefly
+- Prefer short justifications tied to chemistry or data evidence over hype
+
+## Show molecules as images, not SMILES walls
+
+- When presenting structures, render with RDKit (or equivalent) and show **images**
+- SMILES may appear in code/logs; user-facing summaries should lead with drawings + name/id + key score
+
+## Pitfalls to call out, not paper over
+
+- Domain shift / bad splits, unstandardized SMILES, duplicate leakage
+- Over-trusting docking or a single assay proxy
+- Treating optimization as linear when properties trade off
+
+## MVP before complexity
+
+- Do not add new tooling or model classes until the current week's goals are done and explained
+- Keep pipelines minimal and reproducible (clear scripts/notebooks, fixed seeds where relevant)

@@ -1,0 +1,5 @@
+.venv
+__pycache__/
+.ipynb_checkpoints/
+data/chemprop_f2/
+.DS_Store

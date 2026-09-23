@@ -1,0 +1,25 @@
+---
+description: RDKit / dockstring / ChemProp usage conventions for Python code
+globs: "**/*.{py,ipynb}"
+alwaysApply: false
+---
+
+# Cheminformatics Code Conventions
+
+## RDKit
+
+- Use RDKit for parse → standardize/neutralize → canonicalize → featurize → render
+- Morgan fingerprints: document **radius** and **nBits**; similarity splits use **Tanimoto ~0.7**
+- Substructure checks and descriptor sets (including Descriptastorus) are fine for EDA/feature study
+
+## dockstring
+
+- Target name for this project: `"F2"`
+- Pattern: `load_target("F2")` then `target.dock(smiles)` → score + aux (affinities, pose)
+- Persist scores and SMILES together; do not dock huge libraries without a clear subsample plan
+
+## ChemProp / trees
+
+- ChemProp for larger graph-based training; XGBoost/RF acceptable baselines on Morgan/descriptors
+- Always pair training code with a **scaffold or similarity split**, never a silent random split
+- Log train/val/test sizes and split parameters next to metrics

@@ -1,0 +1,28 @@
+---
+description: Modeling stack — Morgan/XGBoost, ChemProp, docking validation order
+alwaysApply: true
+---
+
+# Modeling Stack
+
+## Default path (this week)
+
+1. Featurize: **Morgan fingerprints** (+ optional RDKit / Descriptastorus descriptors)
+2. Baseline: **XGBoost** or Random Forest on fingerprints/descriptors
+3. Stronger 2D model: **ChemProp** (graph NN); for medium data consider **CheMeleon** (pretrained ChemProp)
+4. Validate interesting molecules with **dockstring** docking against **F2**
+
+## Property & objective
+
+- Primary label: F2 **docking / binding** score from DOCKSTRING
+- Benchmark-style objectives may add a **QED / druglikeness** penalty later — do not prioritize that until the docking predictor MVP works
+- Defer 3D, LLM-as-predictor, conformer, shape, and co-folding models until after MVP
+
+## Interpretability
+
+- Prefer models and analyses you can explain: feature importances, scaffold groups, similarity to known actives, docking score + pose sanity checks
+- When proposing molecules (e.g. via LLM), immediately **dock** them with dockstring and report score vs dataset context — no fancy generative pipeline required yet
+
+## Compute
+
+- Heavy jobs: Berkeley **SAVIO**; LLM calls: **NRP LLM API** when appropriate

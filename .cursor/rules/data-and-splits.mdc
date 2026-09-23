@@ -1,0 +1,32 @@
+---
+description: Data hygiene — SMILES standardization, EDA, and non-random splits
+alwaysApply: true
+---
+
+# Data & Splits
+
+## Always understand the data first
+
+- Visualize distributions for F2 docking scores before modeling; note oddities (clumps, outliers, missingness, score scale)
+- If values look wrong, investigate before training
+- Featurize with Morgan fingerprints and/or RDKit / Descriptastorus descriptors; report which features look important for F2
+
+## SMILES hygiene (required)
+
+- Standardize and neutralize SMILES with RDKit before hashing, splitting, or training
+- De-duplicate on standardized SMILES
+- Keep a small reusable helper for standardize → neutralize → canonical SMILES
+
+## Never random-split chemical data
+
+- Use **scaffold** and/or **chemical similarity** splits so test molecules are not near-duplicates of train
+- Preferred for this project: **ChemProp-style similarity split** with **Morgan fingerprints**, **Tanimoto threshold 0.7**
+- When reporting metrics, state the split method and threshold explicitly
+
+```python
+# ❌ BAD — random split leaks near-neighbors across folds
+train_test_split(X, y, test_size=0.2)
+
+# ✅ GOOD — scaffold or similarity split (threshold ~0.7 Morgan/Tanimoto)
+# document split type + fingerprint radius/bits + threshold in the notebook/script
+```

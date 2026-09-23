@@ -1,0 +1,28 @@
+---
+description: Molecular optimization project context — F2 target, DOCKSTRING, MVP scope
+alwaysApply: true
+---
+
+# Project Context
+
+This workspace is a **molecular optimization** experiment: select and analyze molecules carefully because wet-lab experiments are costly.
+
+## Target & Data
+
+- **Protein target**: F2 (coagulation factor II / thrombin)
+- **Primary property**: binding affinity via **docking score** (lower is better for dockstring kcal/mol)
+- **Dataset**: DOCKSTRING — ~260k molecules × 58 protein targets, docking scores for all pairs
+- **Package**: `dockstring` — load a target and dock a SMILES in a few lines (see `dock_f2.py`)
+
+## Optimization framing
+
+- Drug-like space is huge (~10^60); NNs generalize poorly across chemical space
+- Small structural changes (chirality, a single group) can flip efficacy
+- Docking / MD / co-folding are useful but expensive and imperfect — prefer ML predictors first, then validate with docking
+- Secondary properties later: solubility, selectivity, QED / druglikeness penalties
+
+## Scope discipline
+
+- Define and ship an **MVP** before adding conformers, shape similarity, co-folding, 3D predictors, or fancy generative loops
+- This week's MVP: DOCKSTRING setup → EDA on F2 → train predictor with proper split → LLM proposes a molecule → dock it
+- Any legal tools are fine; prefer RDKit, tree models / ChemProp, dockstring, SAVIO / NRP LLM API when needed
