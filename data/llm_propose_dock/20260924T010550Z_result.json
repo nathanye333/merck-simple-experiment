@@ -6,7 +6,7 @@
   "llm_raw": "Cc1ccc(cc1)C(=O)NCC(=O)N(C)C2=NC=CN=C2N=C(N)N",
   "F2_pred": -8.480020523071289,
   "chemprop_error": null,
-  "dock_score": null,
+  "dock_score": -8.1,
   "affinities": null,
   "F2_context_kcal_mol": {
     "p1": -10.4,
