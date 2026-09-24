@@ -126,17 +126,32 @@ def load_model(ckpt_path: Path | str = DEFAULT_CKPT):
             f"Missing checkpoint: {ckpt_path}\n"
             "Train the full-data model in train_chemprop_f2.ipynb (§7 export) first."
         )
+    # Checkpoint may have been saved on CUDA (e.g. Windows GPU). Map to CPU when no CUDA
+    # so the same predict path works on Mac / CPU-only machines. Trainer(accelerator="auto")
+    # still places the model on the best available device at predict time.
+    map_location = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
     # PyTorch 2.6+ defaults weights_only=True; ChemProp ckpts pickle metric classes (e.g. RMSE).
     # ChemProp.load_from_checkpoint rewrites the ckpt then Lightning loads again — patch both paths.
     _orig_load = torch.load
 
     def _trusted_load(*args, **kwargs):
         kwargs.setdefault("weights_only", False)
+        # ChemProp often passes map_location positionally: torch.load(path, map_location, ...)
+        # Only inject CPU mapping when the caller left it unset.
+        if not torch.cuda.is_available():
+            if len(args) >= 2:
+                if args[1] is None:
+                    args = (args[0], map_location, *args[2:])
+            elif kwargs.get("map_location") is None:
+                kwargs["map_location"] = map_location
         return _orig_load(*args, **kwargs)
 
     torch.load = _trusted_load  # type: ignore[assignment]
     try:
-        return MPNN.load_from_checkpoint(str(ckpt_path), weights_only=False)
+        return MPNN.load_from_checkpoint(
+            str(ckpt_path), map_location=map_location, weights_only=False
+        )
     finally:
         torch.load = _orig_load  # type: ignore[assignment]
 

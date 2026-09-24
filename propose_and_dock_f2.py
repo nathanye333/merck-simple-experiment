@@ -3,10 +3,15 @@
 Uses the OpenAI-compatible NRP endpoint (https://datadisco.cdss.berkeley.edu/nrp-llm-api/).
 API key: NRP_LLM_API_KEY in .env (never commit).
 
+ChemProp 2 needs Python >=3.11; conda-forge dockstring needs Python <3.11. Run this
+script in the ChemProp env and pass --dock-python (or DOCK_PYTHON) to a dockstring
+env interpreter so one CLI still returns F2_pred + dock_score.
+
 Example:
   python propose_and_dock_f2.py
   python propose_and_dock_f2.py --model gpt-oss --skip-dock
   python propose_and_dock_f2.py --smiles "CCO"   # skip LLM; still predict + dock
+  python propose_and_dock_f2.py --dock-python /path/to/f2-mvp/bin/python
 """
 
 from __future__ import annotations
@@ -15,6 +20,8 @@ import argparse
 import json
 import os
 import re
+import subprocess
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -132,7 +139,25 @@ def propose_smiles(
     raise RuntimeError(f"LLM did not return a valid SMILES after {max_attempts} attempts. Last: {last_raw!r}")
 
 
-def dock_f2(smiles: str) -> tuple[float | None, dict]:
+_DOCK_SUBPROCESS_CODE = r"""
+import json, sys
+from dockstring import load_target
+smiles = sys.argv[1]
+score, aux = load_target("F2").dock(smiles)
+aux = aux or {}
+print(json.dumps({"score": score, "affinities": aux.get("affinities")}))
+"""
+
+
+def dock_f2(
+    smiles: str,
+    dock_python: str | Path | None = None,
+) -> tuple[float | None, dict]:
+    """Dock SMILES against F2.
+
+    If dock_python is set, run dockstring in that interpreter (separate env).
+    Otherwise import dockstring in-process.
+    """
     import platform
 
     # dockstring ships AutoDock Vina binaries for Linux/macOS only
@@ -142,11 +167,56 @@ def dock_f2(smiles: str) -> tuple[float | None, dict]:
             "(no vina_windows binary). Run this step under WSL/Linux, DataHub, or SAVIO."
         )
 
-    from dockstring import load_target
+    if dock_python:
+        return _dock_f2_subprocess(smiles, Path(dock_python))
+
+    try:
+        from dockstring import load_target
+    except ImportError as exc:
+        raise RuntimeError(
+            "dockstring is not importable in this env. "
+            "Pass --dock-python /path/to/dockstring-env/bin/python "
+            "(or set DOCK_PYTHON) so docking runs in a Python <3.11 env."
+        ) from exc
 
     target = load_target("F2")
     score, aux = target.dock(smiles)
     return score, aux or {}
+
+
+def _dock_f2_subprocess(smiles: str, dock_python: Path) -> tuple[float | None, dict]:
+    if not dock_python.is_file():
+        raise FileNotFoundError(f"dock python not found: {dock_python}")
+
+    # Calling env/bin/python without `micromamba activate` leaves env/bin off PATH,
+    # so dockstring cannot find `obabel`. Prepend the interpreter's bin dir.
+    env = os.environ.copy()
+    dock_bin = str(dock_python.resolve().parent)
+    env["PATH"] = dock_bin + os.pathsep + env.get("PATH", "")
+
+    proc = subprocess.run(
+        [str(dock_python), "-c", _DOCK_SUBPROCESS_CODE, smiles],
+        capture_output=True,
+        text=True,
+        check=False,
+        env=env,
+    )
+    if proc.returncode != 0:
+        err = (proc.stderr or proc.stdout or "").strip() or f"exit {proc.returncode}"
+        raise RuntimeError(f"dock subprocess failed ({dock_python}): {err}")
+
+    # Last non-empty line should be the JSON payload (dockstring may print logs).
+    lines = [ln.strip() for ln in proc.stdout.splitlines() if ln.strip()]
+    if not lines:
+        raise RuntimeError(f"dock subprocess returned no stdout ({dock_python})")
+    try:
+        payload = json.loads(lines[-1])
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(
+            f"dock subprocess did not return JSON (last line={lines[-1]!r})"
+        ) from exc
+
+    return payload.get("score"), {"affinities": payload.get("affinities")}
 
 
 def score_context(score: float | None) -> str:
@@ -183,12 +253,27 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--max-attempts", type=int, default=3, help="LLM retries if SMILES invalid")
     parser.add_argument("--skip-dock", action="store_true", help="ChemProp only (faster)")
     parser.add_argument(
+        "--dock-python",
+        type=Path,
+        default=None,
+        help=(
+            "Python interpreter with dockstring (e.g. micromamba env f2-mvp). "
+            "Defaults to $DOCK_PYTHON. Use when ChemProp and dockstring cannot share an env."
+        ),
+    )
+    parser.add_argument(
         "--out-dir",
         type=Path,
         default=Path("data/llm_propose_dock"),
         help="Directory for JSON / PNG outputs",
     )
     args = parser.parse_args(argv)
+
+    dock_python = args.dock_python
+    if dock_python is None:
+        env_dock = (os.getenv("DOCK_PYTHON") or "").strip()
+        if env_dock:
+            dock_python = Path(env_dock)
 
     llm_raw = None
     model_used = None
@@ -223,9 +308,12 @@ def main(argv: list[str] | None = None) -> None:
     if args.skip_dock:
         print("\nSkipping dockstring (--skip-dock).")
     else:
-        print("\nDocking with dockstring against F2 (this can take a minute)...")
+        if dock_python:
+            print(f"\nDocking via subprocess ({dock_python}) against F2...")
+        else:
+            print("\nDocking with dockstring against F2 (this can take a minute)...")
         try:
-            dock_score, aux = dock_f2(smiles_std)
+            dock_score, aux = dock_f2(smiles_std, dock_python=dock_python)
             affinities = aux.get("affinities")
             print(f"Docking score (kcal/mol, lower better): {dock_score}")
             print(f"  context vs DOCKSTRING: {score_context(dock_score)}")
@@ -233,7 +321,10 @@ def main(argv: list[str] | None = None) -> None:
                 print(f"  affinities: {affinities}")
         except Exception as exc:
             print(f"Docking failed: {exc}")
-            print("  (ChemProp prediction above is still valid; install/fix dockstring to dock.)")
+            print(
+                "  (ChemProp prediction above is still valid; "
+                "pass --dock-python to a dockstring env or fix in-process dockstring.)"
+            )
 
     run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     out_dir = args.out_dir
@@ -252,6 +343,7 @@ def main(argv: list[str] | None = None) -> None:
         "chemprop_error": None if pred_err is None or (isinstance(pred_err, float) and pred_err != pred_err) else str(pred_err),
         "dock_score": dock_score,
         "affinities": affinities,
+        "dock_python": str(dock_python) if dock_python else sys.executable,
         "F2_context_kcal_mol": F2_CONTEXT,
         "ckpt": str(args.ckpt),
         "structure_png": str(png_path) if png_path.exists() else None,
