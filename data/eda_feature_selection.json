@@ -1,0 +1,33 @@
+{
+  "n_sample": 24998,
+  "seed": 0,
+  "morgan_radius_default": 2,
+  "morgan_nbits": 2048,
+  "tanimoto_threshold": 0.7,
+  "best_morgan_radius_by_xgb": 2,
+  "top_rdkit_n": 10,
+  "top_rdkit_descriptors": [
+    "BertzCT",
+    "RingCount",
+    "HeavyAtomCount",
+    "NumAromaticRings",
+    "NumAmideBonds",
+    "SMR_VSA7",
+    "NumRotatableBonds",
+    "EState_VSA1",
+    "NumAliphaticRings",
+    "NumHDonors"
+  ],
+  "top_rdkit_gain": {
+    "BertzCT": 0.06149354577064514,
+    "RingCount": 0.02384411357343197,
+    "HeavyAtomCount": 0.020780932158231735,
+    "NumAromaticRings": 0.004793250001966953,
+    "NumAmideBonds": 0.004329726565629244,
+    "SMR_VSA7": 0.0038336364086717367,
+    "NumRotatableBonds": 0.0031755687668919563,
+    "EState_VSA1": 0.0015689547872170806,
+    "NumAliphaticRings": 0.0015688425628468394,
+    "NumHDonors": 0.0013205960858613253
+  }
+}

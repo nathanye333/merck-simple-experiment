@@ -1,0 +1,33 @@
+{
+  "model": "chemprop_mpnn",
+  "checkpoint": "models/chemprop_f2_full_cluster.ckpt",
+  "source_checkpoint": "C:/Users/yenat/OneDrive/Documents/GitHub/merck-simple-experiment/data/chemprop_f2_full_cluster_top_rdkit/checkpoints/best-epoch=21-val_loss=0.142.ckpt",
+  "out_dir": "data/chemprop_f2_full_cluster_top_rdkit",
+  "full_run": true,
+  "split_mode": "cluster",
+  "use_mol_features": true,
+  "mol_feature_set": "top_rdkit",
+  "morgan_radius": 2,
+  "morgan_nbits": 2048,
+  "top_rdkit_descriptors": [
+    "BertzCT",
+    "RingCount",
+    "HeavyAtomCount",
+    "NumAromaticRings",
+    "NumAmideBonds",
+    "SMR_VSA7",
+    "NumRotatableBonds",
+    "EState_VSA1",
+    "NumAliphaticRings",
+    "NumHDonors"
+  ],
+  "test_metrics": {
+    "rmse": 0.34748628653881597,
+    "mae": 0.26453537221203977,
+    "r2": 0.883028188003371,
+    "n_train": 198926,
+    "n_val": 22103,
+    "n_test": 38881
+  },
+  "predict_module": "predict_chemprop_f2.py"
+}

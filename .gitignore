@@ -2,4 +2,9 @@
 __pycache__/
 .ipynb_checkpoints/
 data/chemprop_f2/
+data/chemprop_f2_full/
+data/chemprop_f2_*/
+data/chemprop_f2_full_*/
+models/*.ckpt
 .DS_Store
+.env

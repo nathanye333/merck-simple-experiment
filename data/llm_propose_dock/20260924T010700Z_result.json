@@ -1,0 +1,20 @@
+{
+  "timestamp_utc": "2026-09-24T01:07:00.471018+00:00",
+  "smiles_in": "CC(C)c1nc(nc(n1)C(=O)NCCc2ccccc2S(=O)(=O)N)",
+  "smiles_std": "CC(C)c1ncnc(C(=O)NCCc2ccccc2S(N)(=O)=O)n1",
+  "llm_model": "gpt-oss",
+  "llm_raw": "CC(C)c1nc(nc(n1)C(=O)NCCc2ccccc2S(=O)(=O)N)",
+  "F2_pred": -7.971044063568115,
+  "chemprop_error": null,
+  "dock_score": null,
+  "affinities": null,
+  "F2_context_kcal_mol": {
+    "p1": -10.4,
+    "p10": -9.4,
+    "median": -8.2,
+    "p90": -6.9
+  },
+  "ckpt": "models\\chemprop_f2_full_cluster.ckpt",
+  "structure_png": "data\\llm_propose_dock\\20260924T010700Z_mol.png",
+  "notes": "Primary label is DOCKSTRING F2 docking score (kcal/mol, lower better). ChemProp is a 2D predictor; dockstring is the docking oracle for this MVP. Docking is imperfect \u2014 treat as a proxy, not wet-lab affinity."
+}
